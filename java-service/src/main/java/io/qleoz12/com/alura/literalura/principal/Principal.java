@@ -38,12 +38,13 @@ public class Principal {
     private ConverteDados converteDados;
 
     @Autowired
-    I18nUtil i18nUtil;
+    private I18nUtil i18nUtil;
 
     private final Scanner leitura = new Scanner(System.in);
 
     private static final Logger logger = LoggerFactory.getLogger(Principal.class);
 
+    private String lng="en";
     public Principal(LivroRepository livroRepository, ConsumoAPI consumoAPI, ConverteDados converteDados) {
         this.livroRepository = livroRepository;
         this.consumoAPI = consumoAPI;
@@ -52,7 +53,10 @@ public class Principal {
 
     public void executar() {
         boolean running = true;
+        logger.info("select your language  [en,pt]" );
+        lng= leitura.nextLine();
         while (running) {
+
             exibirMenu();
             var opcao = leitura.nextInt();
             leitura.nextLine();
@@ -66,31 +70,21 @@ public class Principal {
                 case 6 -> listarAutoresPorAnoDeMorte();
                 case 7 -> listarLivrosPorIdioma();
                 case 0 -> {
-                    logger.info("Encerrando a LiterAlura!");
+                    logger.info(i18nUtil.getMessage("closing.message",lng));
                     running = false;
                 }
-                default -> logger.warn("Opção inválida!");
+                default -> logger.warn(i18nUtil.getMessage("invalid.option",lng));
             }
         }
     }
 
     private void exibirMenu() {
-        logger.info("""
-                ===========================================================
-                                    LITERALURA
-                       Uma aplicação para você que gosta de livros !
-                       Escolha um número no menu abaixo:
-                -----------------------------------------------------------
-                                     Menu
-                           1- Buscar livros pelo título
-                           2- Listar livros registrados
-                           3- Listar autores registrados
-                           4- Listar autores vivos em um determinado ano
-                           5- Listar autores nascidos em determinado ano
-                           6- Listar autores por ano de sua morte
-                           7- Listar livros em um determinado idioma
-                           0- Sair
-                """);
+        logger.info(String.format("%s\n %s\n %s\n %s\n %s\n ",
+                i18nUtil.getMessage("menu.header",lng),
+                i18nUtil.getMessage("menu.title",lng),
+                i18nUtil.getMessage("menu.description",lng),
+                i18nUtil.getMessage("menu.separator",lng),
+                i18nUtil.getMessage("menu.options",lng)));
     }
 
     @Transactional
@@ -98,14 +92,14 @@ public class Principal {
         for (Book livro : livros) {
             livroRepository.save(livro);
         }
-        logger.info("Livros salvos no banco de dados.");
+        logger.info(i18nUtil.getMessage("books.saved.db",lng));
     }
 
     private void buscarLivrosPeloTitulo() {
         String baseURL = "https://gutendex.com/books?search=";
 
         try {
-            logger.info("Digite o título do livro: ");
+            logger.info(i18nUtil.getMessage("enter.book.title",lng));
             String titulo = leitura.nextLine();
             String endereco = baseURL + titulo.replace(" ", "%20");
             logger.info("URL da API: {}", endereco);
@@ -113,7 +107,7 @@ public class Principal {
             String jsonResponse = consumoAPI.obterDados(endereco);
 
             if (jsonResponse.isEmpty()) {
-                logger.warn("Resposta da API está vazia.");
+                logger.warn(i18nUtil.getMessage("api.response.empty",lng));
                 return;
             }
 
@@ -121,7 +115,7 @@ public class Principal {
             JsonNode resultsNode = rootNode.path("results");
 
             if (resultsNode.isEmpty()) {
-                logger.warn("Não foi possível encontrar o livro buscado.");
+                logger.warn(i18nUtil.getMessage("book.not.found",lng));
                 return;
             }
 
@@ -136,16 +130,14 @@ public class Principal {
             booksByIds.forEach(bookFounded -> livrosDTO.removeIf(livroDTO -> bookFounded.getInternalId().equals(livroDTO.internalId())));
 
             if (!livrosDTO.isEmpty()) {
-                logger.info(i18nUtil.getMessage("books.save"));
+                logger.info(i18nUtil.getMessage("books.save",lng));
                 List<Book> novosLivros = livrosDTO.stream().map(Book::new).collect(Collectors.toList());
                 salvarLivros(novosLivros);
-                logger.info("Livros salvos com sucesso!");
-            } else {
-                logger.info("Todos os livros já estão registrados no banco de dados.");
+                logger.info(i18nUtil.getMessage("books.saved.success",lng));
             }
 
             if (!livrosDTO.isEmpty()) {
-                logger.info("Livros encontrados:");
+                logger.info(i18nUtil.getMessage("books.found",lng));
                 Set<String> titulosExibidos = new HashSet<>();
                 livrosDTO.forEach(livro -> {
                     if (titulosExibidos.add(livro.titulo())) {
@@ -153,15 +145,24 @@ public class Principal {
                     }
                 });
             }
+
+            logger.info(i18nUtil.getMessage("books.already.registered",lng));
+            booksByIds.forEach(x->{
+                logger.info("\n");
+                logger.info(x.toString());
+            }
+            );
+
+
         } catch (Exception e) {
-            logger.error("Erro ao buscar livros: {}", e.getMessage(), e);
+            logger.error(i18nUtil.getMessage("error.fetching.books",lng), e.getMessage(), e);
         }
     }
 
     private void listarLivrosRegistrados() {
         List<Book> livros = livroRepository.findAll();
         if (livros.isEmpty()) {
-            logger.info("Nenhum livro registrado.");
+            logger.info(i18nUtil.getMessage("no.books.registered",lng));
         } else {
             livros.forEach(livro -> logger.info("{}", livro));
         }
@@ -170,7 +171,7 @@ public class Principal {
     private void listarAutoresRegistrados() {
         List<Book> livros = livroRepository.findAll();
         if (livros.isEmpty()) {
-            logger.info("Nenhum autor registrado.");
+            logger.info(i18nUtil.getMessage("no.authors.registered",lng));
         } else {
             livros.stream()
                     .map(Book::getAutor)
@@ -180,7 +181,7 @@ public class Principal {
     }
 
     private void listarAutoresVivos() {
-        System.out.println("Digite o ano: ");
+        logger.info(i18nUtil.getMessage("enter.year",lng));
         Integer ano = leitura.nextInt();
         leitura.nextLine();
 
@@ -188,18 +189,10 @@ public class Principal {
 
         List<Autor> autores = livroRepository.findAutoresVivos(year);
         if (autores.isEmpty()) {
-            System.out.println("Nenhum autor vivo encontrado.");
+            logger.info(i18nUtil.getMessage("no.authors.found",lng));
         } else {
-            System.out.println("Lista de autores vivos no ano de " + ano + ":\n");
-
-            autores.forEach(autor -> {
-                if (Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())) {
-                    String nomeAutor = autor.getAutor();
-                    String anoNascimento = autor.getYearBorn().toString();
-                    String anoFalecimento = autor.getYearDeath().toString();
-                    System.out.println(nomeAutor + " (" + anoNascimento + " - " + anoFalecimento + ")");
-                }
-            });
+            logger.info(i18nUtil.getMessage("authors.list.by.year",lng), ano);
+            autores.forEach(autor -> logger.info("{}", autor));
         }
     }
 

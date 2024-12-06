@@ -12,27 +12,26 @@ import java.util.Locale;
 public class I18nUtil {
 
     @Autowired
-    MessageSource messageSource;
+    private MessageSource messageSource;
 
-//    @Resource(name = "localHolder")
-//    LocalHolder localHolder;
-
-//    public String getMessage(String code, String... args){
-//        return messageSource.getMessage(code, args, localHolder.getCurrentLocale());
-//    }
-    public String getMessage(String code, String... args){
+    /**
+     * Retrieve a localized message based on the given language code.
+     * @param code The key in the properties file.
+     * @param language The language code (e.g., "en", "pt").
+     * @param args Arguments for message formatting (optional).
+     * @return The localized message.
+     */
+    public String getMessage(String code, String language, String... args) {
         Locale locale;
-//        try {
-//            locale = localHolder.getCurrentLocale(); // This depends on the request scope
-//        } catch (IllegalStateException e) {
-//            locale = Locale.getDefault(); // Fallback to default locale
-//        }
+        // Fallback to system default or English
+        try {
+            locale = new Locale(language); // Default locale
+        } catch (IllegalStateException e) {
+            locale = Locale.ENGLISH; // Fallback to English
+        }
 
-        locale = Locale.ENGLISH; // Fallback to default locale
-        locale = new Locale("pt");; // Fallback to default locale
-        // Replace with your actual message source logic
-        return messageSource.getMessage(code,args, locale);
-
+        // Retrieve message from properties file
+        String result= messageSource.getMessage(code, args, locale);
+        return result;
     }
-
 }
