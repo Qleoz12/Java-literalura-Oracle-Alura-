@@ -26,4 +26,5 @@ public interface LivroRepository extends JpaRepository<Book, Long> {
     @Query("SELECT l FROM Book l WHERE l.idioma LIKE %:idioma%")
     List<Book> findByIdioma(@Param("idioma") String idioma);
 
+    List<Book> findByInternalIdIn(List<Long> idList);
 }

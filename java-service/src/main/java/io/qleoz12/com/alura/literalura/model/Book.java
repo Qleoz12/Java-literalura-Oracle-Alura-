@@ -10,6 +10,9 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
+    private Long internalId;
+
     @Column(unique = true, length = 500)  // Increase the length to 500
     private String titulo;
 
@@ -64,10 +67,19 @@ public class Book {
         this.downloads = downloads;
     }
 
+    public Long getInternalId() {
+        return internalId;
+    }
+
+    public void setInternalId(Long internalId) {
+        internalId = internalId;
+    }
+
     // Construtores
     public Book() {}
 
     public Book(LivroDTO livroDTO) {
+        this.internalId=livroDTO.internalId();
         this.titulo = livroDTO.titulo();
         Autor autor = new Autor(livroDTO.autores().get(0));
         this.autor = autor;

@@ -1,5 +1,6 @@
 package io.qleoz12.com.alura.literalura.principal;
 
+import io.qleoz12.com.alura.literalura.i18n.I18nUtil;
 import io.qleoz12.com.alura.literalura.model.Autor;
 import io.qleoz12.com.alura.literalura.model.Book;
 import io.qleoz12.com.alura.literalura.model.LivroDTO;
@@ -36,6 +37,9 @@ public class Principal {
     @Autowired
     private ConverteDados converteDados;
 
+    @Autowired
+    I18nUtil i18nUtil;
+
     private final Scanner leitura = new Scanner(System.in);
 
     private static final Logger logger = LoggerFactory.getLogger(Principal.class);
@@ -62,31 +66,31 @@ public class Principal {
                 case 6 -> listarAutoresPorAnoDeMorte();
                 case 7 -> listarLivrosPorIdioma();
                 case 0 -> {
-                    System.out.println("Encerrando a LiterAlura!");
+                    logger.info("Encerrando a LiterAlura!");
                     running = false;
                 }
-                default -> System.out.println("Opção inválida!");
+                default -> logger.warn("Opção inválida!");
             }
         }
     }
 
     private void exibirMenu() {
-        System.out.println("""
-            ===========================================================
-                                LITERALURA
-                   Uma aplicação para você que gosta de livros !
-                   Escolha um número no menu abaixo:
-            -----------------------------------------------------------
-                                 Menu
-                       1- Buscar livros pelo título
-                       2- Listar livros registrados
-                       3- Listar autores registrados
-                       4- Listar autores vivos em um determinado ano
-                       5- Listar autores nascidos em determinado ano
-                       6- Listar autores por ano de sua morte
-                       7- Listar livros em um determinado idioma
-                       0- Sair
-            """);
+        logger.info("""
+                ===========================================================
+                                    LITERALURA
+                       Uma aplicação para você que gosta de livros !
+                       Escolha um número no menu abaixo:
+                -----------------------------------------------------------
+                                     Menu
+                           1- Buscar livros pelo título
+                           2- Listar livros registrados
+                           3- Listar autores registrados
+                           4- Listar autores vivos em um determinado ano
+                           5- Listar autores nascidos em determinado ano
+                           6- Listar autores por ano de sua morte
+                           7- Listar livros em um determinado idioma
+                           0- Sair
+                """);
     }
 
     @Transactional
@@ -94,96 +98,84 @@ public class Principal {
         for (Book livro : livros) {
             livroRepository.save(livro);
         }
+        logger.info("Livros salvos no banco de dados.");
     }
-
 
     private void buscarLivrosPeloTitulo() {
         String baseURL = "https://gutendex.com/books?search=";
 
         try {
-            System.out.println("Digite o título do livro: ");
+            logger.info("Digite o título do livro: ");
             String titulo = leitura.nextLine();
             String endereco = baseURL + titulo.replace(" ", "%20");
-            System.out.println("URL da API: " + endereco);
+            logger.info("URL da API: {}", endereco);
 
             String jsonResponse = consumoAPI.obterDados(endereco);
-            //System.out.println("Resposta da API: " + jsonResponse);
 
             if (jsonResponse.isEmpty()) {
-                System.out.println("Resposta da API está vazia.");
+                logger.warn("Resposta da API está vazia.");
                 return;
             }
 
-            // Extrai a lista de livros da chave "results"
             JsonNode rootNode = converteDados.getObjectMapper().readTree(jsonResponse);
             JsonNode resultsNode = rootNode.path("results");
 
             if (resultsNode.isEmpty()) {
-                System.out.println("Não foi possível encontrar o livro buscado.");
+                logger.warn("Não foi possível encontrar o livro buscado.");
                 return;
             }
 
-            // Converte os resultados da API em objetos LivroDTO
             List<LivroDTO> livrosDTO = converteDados.getObjectMapper()
                     .readerForListOf(LivroDTO.class)
                     .readValue(resultsNode);
 
-            // Remove as duplicatas existentes no banco de dados
             List<Book> livrosExistentes = livroRepository.findByTitulo(titulo);
-            if (!livrosExistentes.isEmpty()) {
-                System.out.println("Removendo livros duplicados já existentes no banco de dados...");
-                for (Book livroExistente : livrosExistentes) {
-                    livrosDTO.removeIf(livroDTO -> livroExistente.getTitulo().equals(livroDTO.titulo()));
-                }
-            }
+            livrosExistentes.forEach(livroExistente -> livrosDTO.removeIf(livroDTO -> livroExistente.getTitulo().equals(livroDTO.titulo())));
 
-            // Salva os novos livros no banco de dados
+            List<Book> booksByIds = livroRepository.findByInternalIdIn(livrosDTO.stream().map(LivroDTO::internalId).collect(Collectors.toList()));
+            booksByIds.forEach(bookFounded -> livrosDTO.removeIf(livroDTO -> bookFounded.getInternalId().equals(livroDTO.internalId())));
+
             if (!livrosDTO.isEmpty()) {
-                System.out.println("Salvando novos livros encontrados...");
+                logger.info(i18nUtil.getMessage("books.save"));
                 List<Book> novosLivros = livrosDTO.stream().map(Book::new).collect(Collectors.toList());
                 salvarLivros(novosLivros);
-                System.out.println("Livros salvos com sucesso!");
+                logger.info("Livros salvos com sucesso!");
             } else {
-                System.out.println("Todos os livros já estão registrados no banco de dados.");
+                logger.info("Todos os livros já estão registrados no banco de dados.");
             }
 
-            // Exibe os livros encontrados
             if (!livrosDTO.isEmpty()) {
-                System.out.println("Livros encontrados:");
-                Set<String> titulosExibidos = new HashSet<>(); // Para controlar títulos já exibidos
-                for (LivroDTO livro : livrosDTO) {
-                    if (!titulosExibidos.contains(livro.titulo())) {
-                        System.out.println(livro);
-                        titulosExibidos.add(livro.titulo());
+                logger.info("Livros encontrados:");
+                Set<String> titulosExibidos = new HashSet<>();
+                livrosDTO.forEach(livro -> {
+                    if (titulosExibidos.add(livro.titulo())) {
+                        logger.info("{}", livro);
                     }
-                }
+                });
             }
         } catch (Exception e) {
-            logger.error("error Code: " + e);
-            System.out.println("Erro ao buscar livros: " + e.getMessage());
+            logger.error("Erro ao buscar livros: {}", e.getMessage(), e);
         }
     }
-
-
 
     private void listarLivrosRegistrados() {
         List<Book> livros = livroRepository.findAll();
         if (livros.isEmpty()) {
-            System.out.println("Nenhum livro registrado.");
+            logger.info("Nenhum livro registrado.");
         } else {
-            livros.forEach(System.out::println);
+            livros.forEach(livro -> logger.info("{}", livro));
         }
     }
 
     private void listarAutoresRegistrados() {
         List<Book> livros = livroRepository.findAll();
         if (livros.isEmpty()) {
-            System.out.println("Nenhum autor registrado.");
+            logger.info("Nenhum autor registrado.");
         } else {
             livros.stream()
                     .map(Book::getAutor)
                     .distinct()
-                    .forEach(autor -> System.out.println(autor.getAutor()));
+                    .forEach(autor -> logger.info("{}", autor.getAutor()));
         }
     }
 
@@ -201,7 +193,7 @@ public class Principal {
             System.out.println("Lista de autores vivos no ano de " + ano + ":\n");
 
             autores.forEach(autor -> {
-                if(Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())){
+                if (Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())) {
                     String nomeAutor = autor.getAutor();
                     String anoNascimento = autor.getYearBorn().toString();
                     String anoFalecimento = autor.getYearDeath().toString();
@@ -225,7 +217,7 @@ public class Principal {
             System.out.println("Lista de autores nascidos no ano de " + ano + ":\n");
 
             autores.forEach(autor -> {
-                if(Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())){
+                if (Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())) {
                     String nomeAutor = autor.getAutor();
                     String anoNascimento = autor.getYearBorn().toString();
                     String anoFalecimento = autor.getYearDeath().toString();
@@ -252,7 +244,7 @@ public class Principal {
 
 
             autores.forEach(autor -> {
-                if (Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())){
+                if (Autor.possuiAno(autor.getYearBorn()) && Autor.possuiAno(autor.getYearDeath())) {
                     String nomeAutor = autor.getAutor();
                     String anoNascimento = autor.getYearBorn().toString();
                     String anoFalecimento = autor.getYearDeath().toString();
@@ -265,13 +257,13 @@ public class Principal {
 
     private void listarLivrosPorIdioma() {
         System.out.println("""
-            Digite o idioma pretendido:
-            Inglês (en)
-            Português (pt)
-            Espanhol (es)
-            Francês (fr)
-            Alemão (de)
-            """);
+                Digite o idioma pretendido:
+                Inglês (en)
+                Português (pt)
+                Espanhol (es)
+                Francês (fr)
+                Alemão (de)
+                """);
         String idioma = leitura.nextLine();
 
         List<Book> livros = livroRepository.findByIdioma(idioma);

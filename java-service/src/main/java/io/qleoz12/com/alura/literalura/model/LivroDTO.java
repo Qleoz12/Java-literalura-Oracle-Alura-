@@ -6,13 +6,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record LivroDTO(@JsonAlias("title") String titulo,
-                       @JsonAlias("download_count") Double numeroDownload,
-                       @JsonAlias("languages") List<String> idioma,
-                       @JsonAlias("authors") List<AutorDTO> autores) {
+public record LivroDTO(
+        @JsonAlias("id") Long internalId,
+        @JsonAlias("title") String titulo,
+        @JsonAlias("download_count") Double numeroDownload,
+        @JsonAlias("languages") List<String> idioma,
+        @JsonAlias("authors") List<AutorDTO> autores) {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("internalId: ").append(internalId).append("\n");
         sb.append("Título: ").append(titulo).append("\n");
         sb.append("Autor(es): \n");
         for (AutorDTO autor : autores) {
