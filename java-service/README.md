@@ -128,15 +128,3 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 ## Contact
 
 Feel free to reach out if you have any questions or suggestions.
-
----
-
-## Application Screenshots
-
-![img](https://github.com/vitor-fidelis/literalura/blob/94bde8826b6be879fd89b3866bd793f065572c9d/imagens/imagens/Captura%20de%20ecr%C3%A3%202024-06-03%20155941.png)
-![img](https://github.com/vitor-fidelis/literalura/blob/94bde8826b6be879fd89b3866bd793f065572c9d/imagens/imagens/Captura%20de%20ecr%C3%A3%202024-06-01%20195448.png)
-![img](https://github.com/vitor-fidelis/literalura/blob/94bde8826b6be879fd89b3866bd793f065572c9d/imagens/imagens/Captura%20de%20ecr%C3%A3%202024-06-01%20195525.png)
-![img](https://github.com/vitor-fidelis/literalura/blob/main/imagens/imagens/Captura%20de%20ecr%C3%A3%202024-06-01%20195615.png)
-![img](https://github.com/vitor-fidelis/literalura/blob/94bde8826b6be879fd89b3866bd793f065572c9d/imagens/imagens/Captura%20de%20ecr%C3%A3%202024-06-03%20174736.png)
-
-I hope you enjoy this application and find it useful for your literary needs!
