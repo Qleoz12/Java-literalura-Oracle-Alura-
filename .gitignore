@@ -1,3 +1,5 @@
 /.idea
 /java-service/*.bak
 */*.bak
+/mysql-data
+/*.bak

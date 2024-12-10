@@ -1,0 +1,1 @@
+docker build -t microservices-mysql-db . && docker run -it microservices-mysql-db

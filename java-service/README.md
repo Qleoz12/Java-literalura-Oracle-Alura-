@@ -20,7 +20,8 @@
 - **Java 17**
 - **Spring Boot 2.7**
 - **Hibernate**
-- **PostgreSQL**
+- **H2**
+- **MySQL**
 - **Gutendex API**
 - **Maven**
 
@@ -31,6 +32,7 @@
 - Java 17 or later
 - Maven
 - PostgreSQL
+- docker
 
 ### Installation
 *bonus jenv*

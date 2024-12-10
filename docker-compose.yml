@@ -1,7 +1,7 @@
 version: "3.3"
 services:
   db:
-    build: "../database-image"
+    build: "./database-image"
     image: "microservices-mysql-db"
     container_name: "mysql-container"
     command: --default-authentication-plugin=mysql_native_password
@@ -20,3 +20,23 @@ services:
     mem_reservation: 128m
     networks:
       - mybridge
+
+  java-service:
+    build: "./java-service"
+    image: "java-service-image"
+    container_name: "java-service-container"
+    restart: always
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./java-service:/home/app
+    depends_on:
+      - db
+    cpus: 0.5
+    mem_limit: 512m
+    mem_reservation: 128m
+    networks:
+      - mybridge
+networks:
+  mybridge:
+    driver: bridge
